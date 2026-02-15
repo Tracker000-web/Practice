@@ -13,3 +13,5 @@ export async function loadAnalytics() {
     document.getElementById("totalSubmissions").innerText = totalSubmissions;
     document.getElementById("todaySubmissions").innerText = completed;
 }
+
+window.loadAnalytics = loadAnalytics;

@@ -18,3 +18,13 @@ export function initLayout() {
         });
     });
 }
+
+export function toggleModal() {
+    const modal = document.getElementById('myModal'); // or your modal ID
+    if (modal) {
+        modal.classList.toggle('hidden');
+    }
+}
+
+// THE FIX: Move the function to the global window
+window.toggleModal = toggleModal;
