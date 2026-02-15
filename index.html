@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MY CRM</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="trackerpage.css">
+
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+        <button id="menu-toggle" class="hamburger" title="Expand menu">☰</button>
+        <h2 class="logo">MY CRM</h2>
+    </div>
+    
+    <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+    <button class="nav-btn" data-target="users">Users</button>
+    <button class="nav-btn" data-target="trackers">Trackers</button>
+    <button class="nav-btn" data-target="logs">Logs</button>
+    <button class="nav-btn" data-target="metrics">Metrics</button>
+    <button class="nav-btn" data-target="appointments">Appointments</button>
+
+    <div class="sidebar-footer">
+        <button id="logoutBtn" class="btn-logout" title="Log out">
+            <svg class="logout-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.707,8.707,5.414,11H17a1,1,0,0,1,0,2H5.414l2.293,2.293a1,1,0,1,1-1.414,1.414l-4-4a1,1,0,0,1,0-1.414l4-4A1,1,0,1,1,7.707,8.707ZM21,1H13a1,1,0,0,0,0,2h7V21H13a1,1,0,0,0,0,2h8a1,1,0,0,0,1-1V2A1,1,0,0,0,21,1Z"></path>
+            </svg>
+        </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <header>X</header>
+      
+
+    <!-- DASHBOARD -->
+    <section class="page active" data-page="dashboard">
+      <h1>Dashboard</h1>
+      <p>Welcome to your dashboard</p>
+    </section>
+
+    <!-- USERS -->
+    <section class="page" data-page="users">
+      <h1>Users</h1>
+      <div id="usersContent">Loading...</div>
+    </section>
+
+    <!-- TRACKERS -->
+    <section class="page" data-page="trackers">
+      <h1>Trackers</h1>
+
+      <div id="loadingTrackers" style="display:none;">Loading Trackers...</div>
+
+      <button id="addBtn" class="secondary-btn" onclick="toggleModal()">+</button>
+      <hr>
+
+      <div id="trackerList" style="margin-top: 20px;"></div>
+
+      <!-- ADD TRACKER MODAL -->
+      <div id="trackerModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; width: 90%;">
+          <h3>Add New Manager</h3>
+          <form onsubmit="saveTracker(event)">
+            <input type="text" id="trackerInput" style="width: 100%; margin-bottom: 10px;" placeholder="Enter Manager Name">
+            <p>Spreadsheet Template:</p>
+              <div id="trackerTemplateContainer">
+                <table class="sheet" style="width:100%; border-collapse: collapse; margin-bottom:10px;">
+                  <thead>
+                    <tr style="background:#eee;">
+                      <th>#</th>
+                      <th>Phone</th>
+                      <th>No Answer</th>
+                      <th>Voicemail</th>
+                      <th>Left Message</th>
+                      <th>Call Backs</th>
+                      <th>Appointments</th>
+                      <th>Preset</th>
+                      <th>Confirmed Preset</th>
+                      <th>Status</th>
+                      <th>Comment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1</td>
+                      <td contenteditable="true">09123456789</td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td><input type="checkbox"></td>
+                      <td>
+                        <select>
+                          <option value="">Select Status</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Failed">Failed</option>
+                        </select>
+                      </td>
+                      <td contenteditable="true"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button type="submit">Push to Users</button>
+            <button type="button" onclick="toggleModal()">Cancel</button>
+          </form>
+        </div>
+      </div>
+
+    <!-- LOGS -->
+    <section class="page" data-page="logs">
+      <h1>Logs</h1>
+
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+        <tbody id="sheetBody">
+          <tr>
+            <td>1</td>
+            <td contenteditable="true">09123456789</td>
+            <td contenteditable="true">No Answer</td>
+            <td contenteditable="true"></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </section>
+
+    <!-- Metrics -->
+    <section class="page" data-page="metrics">
+        <h1>Metrics</h1>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script type="module" src="./js/main.js"></script>
+
+</body>
+</html>
