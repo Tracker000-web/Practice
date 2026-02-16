@@ -1,6 +1,5 @@
 const path = require('path');
 const express = require('express');
-const mysql = require('mysql2');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -12,23 +11,50 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
-
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Benito1997!',
-    database: 'my_crm_db'
+app.use((req, res, next) => {
+    console.log(`${req.method} request made to: ${req.url}`);
+    next();
 });
-
-db.connect(err => {
-    if (err) console.error('❌ MySQL Connection Failed:', err.message);
-    else console.log('✅ Connected to MySQL!');
-});
-
 
 // ===========================================
 // 1️⃣ ADMIN: Create ManagersCard
 // ===========================================
+// This matches the fetch('/api/managers') in your admin.js
+app.post('/api/managers', async (req, res) => {
+    const { name, is_new } = req.body;
+    const isNewValue = is_new ? 1 : 0;
+
+    const sql = "INSERT INTO trackers (name, is_new) VALUES (?, ?)";
+    
+    try {
+        // 1. Save to Database using the promise-based pool
+        const [result] = await db.query(sql, [name, isNewValue]);
+
+        // 2. TRIGGER LIVE UPDATE
+        // This sends a signal to EVERYONE connected (Admins and Users)
+        io.emit('refreshManagerCards'); 
+
+        res.status(201).json({ 
+            message: "Manager created and pushed successfully", 
+            id: result.insertId 
+        });
+    } catch (err) {
+        console.error("Database Error:", err);
+        res.status(500).json({ error: "Failed to save manager" });
+    }
+});
+
+app.get('/api/trackers', async (req, res) => {
+    try {
+        // We use the 'db' variable from your new db.js/connection
+        const [rows] = await db.query('SELECT * FROM trackers ORDER BY created_at DESC');
+        res.json(rows); 
+    } catch (err) {
+        console.error("Database Error:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 app.post('/api/trackers', (req, res) => {
     const { tracker_name } = req.body;
 
@@ -49,6 +75,20 @@ app.post('/api/trackers', (req, res) => {
     });
 });
 
+app.delete('/api/managers/:id', (req, res) => {
+    const managerId = req.params.id;
+
+    // IMPORTANT: Make sure the column name matches your DB (id)
+    const sql = "DELETE FROM trackers WHERE id = ?";
+
+    db.query(sql, [managerId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Database error" });
+        }
+        res.json({ message: "Manager deleted successfully" });
+    });
+});
 
 // ===========================================
 // 2️⃣ USER: Create Spreadsheet Container
@@ -176,6 +216,32 @@ io.on('connection', socket => {
         socket.join(`spectate_${user_tracker_id}`);
     });
 
+});
+
+
+// ===========================================
+// 7️⃣ ANALYTICS & DASHBOARD
+// ===========================================
+app.get('/api/analytics', async (req, res) => {
+    try {
+        // Get total submissions, unique users, and count per manager
+        const [totalStats] = await db.query('SELECT COUNT(*) as total FROM user_trackers WHERE status="submitted"');
+        const [userStats] = await db.query('SELECT COUNT(DISTINCT user_name) as unique_users FROM user_trackers');
+        const [managerStats] = await db.query(`
+            SELECT t.name, COUNT(ut.id) as count 
+            FROM trackers t 
+            LEFT JOIN user_trackers ut ON t.id = ut.tracker_id AND ut.status="submitted"
+            GROUP BY t.id
+        `);
+
+        res.json({
+            totalSubmissions: totalStats[0].total,
+            activeUsers: userStats[0].unique_users,
+            breakdown: managerStats
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 server.listen(3000, () =>

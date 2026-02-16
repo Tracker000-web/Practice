@@ -1,17 +1,44 @@
 export async function loadAnalytics() {
+    const container = document.getElementById('analytics-content');
+    if (!container) return;
 
-    const res = await fetch('/api/admin_logs');
-    const logs = await res.json();
+    try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
 
-    const totalSubmissions = logs.length;
+        container.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Submissions</h4>
+                    <p class="stat-number">${data.totalSubmissions}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Active Users</h4>
+                    <p class="stat-number">${data.activeUsers}</p>
+                </div>
+            </div>
 
-    const completed = logs.filter(l =>
-        new Date(l.submitted_at).toDateString() ===
-        new Date().toDateString()
-    ).length;
-
-    document.getElementById("totalSubmissions").innerText = totalSubmissions;
-    document.getElementById("todaySubmissions").innerText = completed;
+            <h3>Submissions by Manager</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Manager Name</th>
+                        <th>Completed Trackers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.breakdown.map(m => `
+                        <tr>
+                            <td>${m.name}</td>
+                            <td>${m.count}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (err) {
+        console.error("Failed to load analytics:", err);
+    }
 }
 
 window.loadAnalytics = loadAnalytics;

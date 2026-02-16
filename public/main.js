@@ -1,6 +1,5 @@
 // public/main.js
 
-// Import specific functions instead of the whole file
 import { initLayout } from '../src/layout.js';
 import { initSocket } from '../src/socket.js';
 import { loadAdminTrackers } from '../src/admin.js';
@@ -11,21 +10,25 @@ const pageModules = {
     'trackers': loadAdminTrackers,
     'users': loadUserHistory,
     'metrics': loadAnalytics,
+    'spectate': () => console.log("Spectate Mode Active")
 };
+
+// 1. Move your user constant to a global scope or fetch it here
+const currentUser = "JohnDoe"; 
 
 window.onload = () => {
     initLayout();
     initSocket();
     
-    // Handle Navigation Switching
     const navBtns = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
 
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
+            // targetPage is defined HERE, inside the scope of the click function
             const targetPage = btn.dataset.target;
 
-            // 1. UI: Toggle active classes
+            // 1. UI Updates
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
@@ -33,22 +36,21 @@ window.onload = () => {
                 p.classList.toggle('active', p.dataset.page === targetPage);
             });
 
-            // 2. LOGIC: Only load data for the active page
+            // 2. Logic: Integrated your check here
             if (pageModules[targetPage]) {
-                pageModules[targetPage]();
+                if (targetPage === 'users') {
+                    // Pass the username to loadUserHistory
+                    pageModules[targetPage](currentUser); 
+                } else {
+                    pageModules[targetPage]();
+                }
             }
         });
     });
+
+    // Optional: Trigger the initial page load (e.g., click the first button)
+    if (navBtns.length > 0) navBtns[0].click();
 };
 
-// main.js
-const currentUser = "JohnDoe"; // Replace this with how you actually get the username
-
-if (pageModules[targetPage]) {
-    // If the page is 'users', we must pass the name
-    if (targetPage === 'users') {
-        pageModules[targetPage](currentUser); 
-    } else {
-        pageModules[targetPage]();
-    }
-}
+// --- DELETE EVERYTHING BELOW THIS LINE IN YOUR FILE ---
+// (The extra code at the bottom was causing your ReferenceError)

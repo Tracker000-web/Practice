@@ -18,3 +18,9 @@ export function initSocket() {
         import('./admin.js').then(m => m.refreshLogs());
     });
 }
+
+// Add this to your Socket initialization logic
+socket.on('refreshManagerCards', () => {
+    console.log("New manager card detected! Refreshing list...");
+    loadAdminTrackers(); 
+});
