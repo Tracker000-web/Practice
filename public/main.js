@@ -1,20 +1,24 @@
 // public/main.js
 
 import { initLayout } from '../src/layout.js';
-import { initSocket } from '../src/socket.js';
-import { loadAdminTrackers } from '../src/admin.js';
-import { loadUserHistory } from '../src/user.js';
+import { initSocket } from './socket.js';
+import { loadAdminTemplates } from '../src/admin.js';
 import { loadAnalytics } from '../src/analytics.js';
-
+import { initUser } from './user.js';
+ 
 const pageModules = {
-    'trackers': loadAdminTrackers,
-    'users': loadUserHistory,
+    'trackers': loadAdminTemplates,
+    'users': initUser,
     'metrics': loadAnalytics,
     'spectate': () => console.log("Spectate Mode Active")
 };
 
 // 1. Move your user constant to a global scope or fetch it here
 const currentUser = "JohnDoe"; 
+
+document.addEventListener('DOMContentLoaded', () => {
+    initUser();
+});
 
 window.onload = () => {
     initLayout();

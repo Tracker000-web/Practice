@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MY CRM</title>
+
+  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="trackerpage.css">
+
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+        <button id="menu-toggle" class="hamburger" title="Expand menu">☰</button>
+        <h2 class="logo">USER</h2>
+    </div>
+    
+    <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+    <button class="nav-btn" data-target="trackers">Trackers</button>
+    <button class="nav-btn" data-target="achievements">Achievements</button>
+    <button class="nav-btn" data-target="appointments">Appointments</button>
+    <button class="nav-btn" data-target="metrics">Metrics</button>
+    <button class="nav-btn" data-target="history">History</button>
+    <button class="nav-btn" data-target="practice">Practice</button>
+
+
+    <div class="sidebar-footer">
+        <button id="logoutBtn" class="btn-logout" title="Log out">
+            <svg class="logout-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.707,8.707,5.414,11H17a1,1,0,0,1,0,2H5.414l2.293,2.293a1,1,0,1,1-1.414,1.414l-4-4a1,1,0,0,1,0-1.414l4-4A1,1,0,1,1,7.707,8.707ZM21,1H13a1,1,0,0,0,0,2h7V21H13a1,1,0,0,0,0,2h8a1,1,0,0,0,1-1V2A1,1,0,0,0,21,1Z"></path>
+            </svg>
+        </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <header>X</header>
+    <!-- DASHBOARD --> 
+
+    <!-- TRACKERS -->
+    <section class="page" data-page="trackers">
+      <h1>Trackers</h1>
+    <div id="trackerList"></div>
+
+    <div id="trackerSheetContainer"></div>
+
+
+  </main>
+</div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script type="module" src="./public/main.js"></script>
+
+</body>
+
+</html>

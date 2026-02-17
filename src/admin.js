@@ -1,211 +1,147 @@
-import { socket } from './socket.js';
+import { socket } from '../public/socket.js';
 
-
-// 1️⃣ Add New Manager (Modal Logic)
-window.saveNewManager = async function() {
-    const nameInput = document.getElementById('newManagerName');
-    const managerName = nameInput.value.trim();
-
-    if (!managerName) return alert("Please enter a name");
-
-    const res = await fetch('/api/managers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: managerName, is_new: true })
-    });
-
-    if (res.ok) {
-        nameInput.value = "";
-        toggleModal('addManagerModal'); // Close modal
-        loadAdminTrackers(); // Refresh the list of cards
-    }
+/* =========================================
+   CONFIG
+========================================= */
+const API = {
+    templates: 'http://localhost:3000/api/admin/templates',
+    createTemplate: 'http://localhost:3000/api/admin/create-template',
+    deleteTemplate: (id) => `http://localhost:3000/api/admin/create-template/${id}`
 };
 
-window.handlePush = async function(event) {
+/* =========================================
+   INITIALIZATION
+========================================= */
+document.addEventListener("DOMContentLoaded", () => {
+    loadAdminTemplates();
+    registerSocketListeners();
+});
+
+/* =========================================
+   SOCKET LISTENERS
+========================================= */
+function registerSocketListeners() {
+    socket.on("refreshManagerCards", loadAdminTemplates);
+    socket.on("trackerSubmitted", loadAdminTemplates);
+}
+
+/* =========================================
+   PUBLISH TEMPLATE
+========================================= */
+window.handlePublish = async function(event) {
     if (event) event.preventDefault();
+    const input = document.getElementById("trackerInput");
+    const name = input?.value?.trim();
 
-    const nameInput = document.getElementById('trackerInput');
-    const managerName = nameInput.value ? nameInput.value.trim() : "";
-
-    if (!managerName) return alert("Please enter a name");
+    if (!name) return alert("Please enter a name");
 
     try {
-        // 1. Save to Database via your API
-        const res = await fetch('/api/managers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await fetch(API.createTemplate, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                name: managerName, 
-                is_new: true // This triggers the "NEW" badge on user end
+                title: name,
+                fields: [],
+                status: 'live'  // Published templates visible to users
             })
         });
 
-        if (res.ok) {
-            // 2. TRIGGER WORKFLOW: Tell the server to alert all users
-            socket.emit("adminPushedCard");
+        if (!res.ok) throw new Error(await res.text());
 
-            // 3. UI Cleanup
-            nameInput.value = "";
-            toggleModal(trackerModal); // Close the modal
-            
-            // Refresh the admin's own list to see the new manager
-            if (typeof loadAdminTrackers === 'function') loadAdminTrackers();
-            
-            console.log(`Successfully pushed ${managerName}`);
-        } else {
-            const errorData = await res.json();
-            alert(`Error: ${errorData.error || 'Server rejected the request'}`);
-        }
+        input.value = "";
+        await loadAdminTemplates();
+        console.log(`Template published: ${name}`);
     } catch (err) {
-        console.error("Push failed:", err);
-        alert("Network error. Please check if the server is running.");
+        console.error("Publish failed:", err);
+        alert("Failed to publish template.");
     }
 };
 
-export function renderAdminCard(tracker) {
-    const list = document.getElementById('trackerList');
-    const card = document.createElement('div');
+/* =========================================
+   LOAD TEMPLATES
+========================================= */
+export async function loadAdminTemplates() {
+    try {
+        const res = await fetch(API.templates);
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+        const templates = await res.json();
+        const list = document.getElementById("trackerList");
+        if (!list) return;
+
+        list.innerHTML = "";
+        if (!Array.isArray(templates)) throw new Error("Templates not array");
+
+        templates.forEach(renderAdminCard);
+    } catch (err) {
+        console.error("Failed to load templates:", err);
+    }
+}
+
+/* =========================================
+   RENDER ADMIN CARD
+========================================= */
+function renderAdminCard(template) {
+    const list = document.getElementById("trackerList");
+    const card = document.createElement("div");
     card.className = "manager-card admin-view";
 
     card.innerHTML = `
         <div class="card-info">
-            <span>${tracker.name}</span>
-            ${tracker.is_new ? '<span class="badge-new">NEW</span>' : ''}
+            <span>${template.title}</span> 
+            ${template.status === 'live' ? '<span class="badge-live">LIVE</span>' : '<span class="badge-draft">DRAFT</span>'}
         </div>
         <div class="card-actions">
-            <button class="spectate-btn" onclick="spectate(${tracker.id})">
-                Spectate
-            </button>
-            <button class="delete-btn" onclick="deleteManager(${tracker.id}, '${tracker.name}')" style="background: #ff4d4d; color: white;">
-                Delete
-            </button>
+            <button class="spectate-btn" data-id="${template.id}">Spectate</button>
+            <button class="delete-btn" data-id="${template.id}">Delete</button>
         </div>
     `;
 
     list.appendChild(card);
+
+    card.querySelector(".spectate-btn").addEventListener("click", () => spectate(template.id));
+    card.querySelector(".delete-btn").addEventListener("click", () => deleteTemplate(template.id, template.title));
 }
 
-// 2️⃣ New Delete Function
-window.deleteManager = async function(id, name) {
-    if (!confirm(`Are you sure you want to delete "${name}"? This will remove it from all users.`)) {
-        return;
-    }
+/* =========================================
+   DELETE TEMPLATE
+========================================= */
+async function deleteTemplate(id, title) {
+    if (!confirm(`Delete "${title}"?`)) return;
 
     try {
-        const res = await fetch(`/api/managers/${id}`, { method: 'DELETE' });
-
-        if (res.ok) {
-            // Tell users to refresh so the card disappears for them too
-            socket.emit("adminPushedCard"); 
-            
-            // Refresh admin's own list
-            loadAdminTrackers(); 
-            alert("Manager deleted successfully.");
-        } else {
-            alert("Error deleting manager.");
-        }
+        const res = await fetch(API.deleteTemplate(id), { method: "DELETE" });
+        if (!res.ok) throw new Error();
+        await loadAdminTemplates();
+        console.log(`Deleted template: ${title}`);
     } catch (err) {
         console.error("Delete failed:", err);
-    }
-};
-
-// 2️⃣ Spectate Live Logic
-window.spectate = function(user_tracker_id) {
-    console.log("Viewing Live Tracker:", user_tracker_id);
-    
-    // Join the specific room for this tracker
-    socket.emit("joinSpectate", user_tracker_id);
-
-    // Switch to the 'Spectate' tab/view in your Admin UI
-    document.querySelector('[data-page="spectate"]').click(); 
-
-    // Listen for live updates from the user's end
-    socket.on("liveUpdate", (data) => {
-        const liveView = document.getElementById('live-spectate-content');
-        if (liveView) {
-            liveView.innerHTML = data.content; // Injects the user's table HTML live
-        }
-    });
-};
-
-// 3️⃣ Helper: Global Modal Toggle
-window.toggleModal = function(modalId = 'trackerModal') {
-    // If modalId is an Event object (sometimes happens with listeners), default it
-    if (typeof modalId !== 'string') modalId = 'trackerModal';
-    
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        // Switch between display styles to match your inline HTML style
-        const isHidden = modal.style.display === 'none';
-        modal.style.display = isHidden ? 'flex' : 'none';
-        
-        // Also toggle the 'active' class for CSS animations if you have them
-        modal.classList.toggle('active');
-    } else {
-        console.error("Modal not found with ID:", modalId);
-    }
-};
-
-export async function loadAdminTrackers() {
-    try {
-        const res = await fetch('/api/trackers');
-        
-        // If the server returns 404, this will catch the error before the JSON crash
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-
-        const trackers = await res.json();
-
-        const list = document.getElementById('trackerList');
-        if (list) {
-            list.innerHTML = "";
-            // Make sure this function name matches what you wrote for the admin cards
-            trackers.forEach(renderAdminCard); 
-        }
-    } catch (err) {
-        console.error("Failed to load trackers:", err);
+        alert("Delete failed.");
     }
 }
 
-export async function addNewManager(managerName) {
-    await fetch('/api/managers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: managerName, is_new: true })
-    });
-    loadAdminTrackers(); // Refresh the list
+/* =========================================
+   SPECTATE USER TRACKER
+========================================= */
+function spectate(templateId) {
+    console.log("Joining spectate room:", templateId);
+    socket.emit("joinSpectate", templateId);
+
+    // Navigate to spectate page (if you have one)
+    const pageButton = document.querySelector('[data-page="spectate"]');
+    if (pageButton) pageButton.click();
 }
 
-export function renderManagerCard(tracker) {
-    const list = document.getElementById('trackerList');
-    if (!list) return; // Safety check
-
-    const card = document.createElement('div');
-    card.className = "manager-card";
-
-    card.innerHTML = `
-        <span>${tracker.name}</span>
-        ${tracker.is_new ? '<span class="badge-new">NEW</span>' : ''}
-        <button onclick="spectate(${tracker.id})">
-            Spectate
-        </button>
-    `;
-
-    list.appendChild(card);
-}
-
-export function spectate(user_tracker_id) {
-    console.log("Joined Live Spectate Room:", user_tracker_id);
-    socket.emit("joinSpectate", user_tracker_id);
-    
-    // Listen for live updates from the user
-    socket.on("liveUpdate", (data) => {
-        updateSpectateUI(data); 
-    });
-}
-
-
-// --- ADD THESE LINES TO FIX THE ERRORS ---
-window.loadAdminTrackers = loadAdminTrackers;
-window.renderManagerCard = renderManagerCard;
 window.spectate = spectate;
 
+/* =========================================
+   MODAL TOGGLE
+========================================= */
+window.toggleModal = function(modalId = "trackerModal") {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    const isHidden = modal.style.display === "none";
+    modal.style.display = isHidden ? "flex" : "none";
+    modal.classList.toggle("active");
+};
