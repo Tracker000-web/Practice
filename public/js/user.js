@@ -1,3 +1,8 @@
+// public/js/user.js
+import { socket } from './socket.js';
+import { initLayout } from "./layout.js";
+
+
 /* =========================================
    CONFIG
 ========================================= */
@@ -13,20 +18,67 @@ const API = {
    STATE
 ========================================= */
 const state = {
-    currentUser: "JohnDoe",
+    currentUser: "JohnDoe",   // default user, will be overwritten by initUser
     activeTemplate: null,
     trackerRows: [],
     isSubmitted: true
 };
 
 /* =========================================
-   INIT
+   INITIALIZING
 ========================================= */
 export function initUser(userId = "JohnDoe") {
     state.currentUser = userId;
+
+    initLayout();
+
+    // Join personal Socket.io room for real-time updates
+    socket.emit("joinUserRoom", userId);
+
     loadUserTemplate();
     loadUserHistory();
+    registerSocketListeners();
 }
+
+/* =========================================
+   SOCKET LISTENERS
+========================================= */
+function registerSocketListeners() {
+    socket.on("trackerUpdated", (rowData) => {
+        console.log("Tracker updated by admin:", rowData);
+    });
+
+    socket.on("trackerSubmitted", () => {
+        console.log("Admin detected submission!");
+        alert("Your tracker was successfully submitted!");
+        state.isSubmitted = true;
+    });
+
+    // Listen for template assigned from admin
+    socket.on("newTemplateAssigned", async ({ templateId }) => {
+        console.log("New template assigned:", templateId);
+
+        // Fetch the full template from server
+        const res = await fetch(`http://localhost:3000/api/user/${state.currentUser}/template`);
+        if (!res.ok) return console.error("Failed to load template after assignment");
+        const data = await res.json();
+
+        if (data.template) {
+            // If multiple templates, ensure array
+            const templates = Array.isArray(data.template) ? data.template : [data.template];
+
+            templates.forEach(t => {
+                // Skip if already rendered
+                if (!state.activeTemplates.find(temp => temp.id === t.id)) {
+                    state.activeTemplates.push(t);
+                    renderManagerCard(t);
+                    alert(`A new tracker "${t.title}" has been assigned to you!`);
+                }
+            });
+        }
+    });
+}
+
 
 /* =========================================
    LOAD TEMPLATE
@@ -38,19 +90,21 @@ async function loadUserTemplate() {
     container.innerHTML = "Loading...";
 
     try {
-        const res = await fetch(API.getTemplate(state.currentUser));
+        const res = await fetch(`http://localhost:3000/api/user/${state.currentUser}/template`);
         if (!res.ok) throw new Error(res.status);
 
         const data = await res.json();
         container.innerHTML = "";
 
-        if (!data.template || data.template.status !== 'live') {
+        if (!data.template || data.template.status !== 'New') {
             container.innerHTML = "<p>No tracker assigned.</p>";
             return;
         }
 
-        state.activeTemplate = data.template;
-        renderManagerCard(data.template);
+        // Handle multiple templates
+        state.activeTemplates = Array.isArray(data.template) ? data.template : [data.template];
+
+        state.activeTemplates.forEach(t => renderManagerCard(t));
 
     } catch (err) {
         console.error("Template load error:", err);
@@ -58,13 +112,19 @@ async function loadUserTemplate() {
     }
 }
 
+
 /* =========================================
    RENDER MANAGER CARD
 ========================================= */
 function renderManagerCard(template) {
     const container = document.getElementById('trackerList');
+
+    // prevent duplicate card
+    if (document.querySelector(`.manager-card[data-id="${template.id}"]`)) return;
+
     const card = document.createElement('div');
     card.className = 'manager-card';
+    card.dataset.id = template.id;
 
     card.innerHTML = `
         <h3>${template.title}</h3>
@@ -73,7 +133,6 @@ function renderManagerCard(template) {
 
     container.appendChild(card);
 
-    // Event binding
     card.querySelector('.open-sheet-btn').addEventListener('click', () => openSpreadsheet(template));
 }
 
@@ -90,11 +149,7 @@ function openSpreadsheet(template) {
     container.innerHTML = `
         <div class="sheet-header">
             <h2>${template.title}</h2>
-            ${
-                template.status === 'live'
-                    ? '<button id="addRowBtn">+ Add New Tracker</button>'
-                    : '<p class="info-text">This tracker is not yet published.</p>'
-            }
+            ${template.status === 'New' ? '<button id="addRowBtn">+ Add New Tracker</button>' : '<p class="info-text">This tracker is not yet published.</p>'}
             <button id="submitAllBtn">Submit All</button>
         </div>
         <table id="trackerTable">
@@ -105,7 +160,7 @@ function openSpreadsheet(template) {
         </table>
     `;
 
-    if (template.status === 'live') {
+    if (template.status === 'New') {
         document.getElementById('addRowBtn').addEventListener('click', () => addTrackerRow(template));
     }
 
@@ -126,8 +181,15 @@ function addTrackerRow(template) {
         const td = document.createElement('td');
         const input = document.createElement('input');
         input.type = 'text';
+        input.addEventListener('input', e => {
+            rowData[field] = e.target.value;
 
-        input.addEventListener('input', e => rowData[field] = e.target.value);
+            // Push live update to admins spectating
+            socket.emit("trackerUpdate", {
+                templateId: template.id,
+                rowData
+            });
+        });
 
         td.appendChild(input);
         row.appendChild(td);
@@ -159,6 +221,10 @@ async function submitAllTrackers(template) {
         alert("Submitted successfully!");
         state.isSubmitted = true;
         document.getElementById('trackerSheetContainer').innerHTML = "";
+
+        // Notify admins in real-time
+        socket.emit("trackerSubmitted", template.id);
+
         loadUserHistory();
 
     } catch (err) {
@@ -207,3 +273,6 @@ window.addEventListener('beforeunload', (e) => {
         e.returnValue = "Tracker not submitted!";
     }
 });
+
+
+

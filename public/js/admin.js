@@ -1,4 +1,6 @@
-import { socket } from '../public/socket.js';
+// public/js/admin.js
+import { socket } from './socket.js';
+import { initLayout } from "./layout.js";
 
 /* =========================================
    CONFIG
@@ -6,13 +8,14 @@ import { socket } from '../public/socket.js';
 const API = {
     templates: 'http://localhost:3000/api/admin/templates',
     createTemplate: 'http://localhost:3000/api/admin/create-template',
-    deleteTemplate: (id) => `http://localhost:3000/api/admin/create-template/${id}`
+    deleteTemplate: (id) => `http://localhost:3000/api/admin/templates/${id}`
 };
 
 /* =========================================
-   INITIALIZATION
+   INIT
 ========================================= */
 document.addEventListener("DOMContentLoaded", () => {
+    initLayout();  
     loadAdminTemplates();
     registerSocketListeners();
 });
@@ -22,40 +25,60 @@ document.addEventListener("DOMContentLoaded", () => {
 ========================================= */
 function registerSocketListeners() {
     socket.on("refreshManagerCards", loadAdminTemplates);
-    socket.on("trackerSubmitted", loadAdminTemplates);
+    socket.on("trackerSubmitted", (templateId) => {
+        console.log("Tracker submitted for template:", templateId);
+        loadAdminTemplates();
+    });
 }
 
+/* =========================================
+   CREATE TEMPLATE
+========================================= */
 /* =========================================
    PUBLISH TEMPLATE
 ========================================= */
 window.handlePublish = async function(event) {
     if (event) event.preventDefault();
+
     const input = document.getElementById("trackerInput");
     const name = input?.value?.trim();
 
-    if (!name) return alert("Please enter a name");
+    if (!name) {
+        return alert("Please enter a template name.");
+    }
 
     try {
-        const res = await fetch(API.createTemplate, {
+        const res = await fetch("http://localhost:3000/api/admin/create-template", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 title: name,
-                fields: [],
-                status: 'live'  // Published templates visible to users
+                fields: [],       // you can customize later
+                status: "live"
             })
         });
 
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText);
+        }
 
+        const data = await res.json();
+
+        alert(`Template "${name}" published successfully!`);
         input.value = "";
-        await loadAdminTemplates();
-        console.log(`Template published: ${name}`);
+
+        await loadAdminTemplates(); // reload admin cards
+
     } catch (err) {
         console.error("Publish failed:", err);
-        alert("Failed to publish template.");
+        alert("Publish failed. Check server logs.");
     }
 };
+
+
+
+
 
 /* =========================================
    LOAD TEMPLATES
@@ -70,8 +93,6 @@ export async function loadAdminTemplates() {
         if (!list) return;
 
         list.innerHTML = "";
-        if (!Array.isArray(templates)) throw new Error("Templates not array");
-
         templates.forEach(renderAdminCard);
     } catch (err) {
         console.error("Failed to load templates:", err);
@@ -103,6 +124,24 @@ function renderAdminCard(template) {
     card.querySelector(".delete-btn").addEventListener("click", () => deleteTemplate(template.id, template.title));
 }
 
+card.querySelector('.assign-btn').addEventListener('click', async () => {
+    if (!confirm("Assign this template to ALL users?")) return;
+    try {
+        const res = await fetch('http://localhost:3000/api/admin/assign-template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ templateId: template.id })
+        });
+
+        if (!res.ok) throw new Error();
+        alert(`Template "${template.title}" assigned to all users!`);
+    } catch (err) {
+        console.error(err);
+        alert("Failed to assign template to all users.");
+    }
+});
+
+
 /* =========================================
    DELETE TEMPLATE
 ========================================= */
@@ -111,14 +150,18 @@ async function deleteTemplate(id, title) {
 
     try {
         const res = await fetch(API.deleteTemplate(id), { method: "DELETE" });
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Server error');
+        }
         await loadAdminTemplates();
         console.log(`Deleted template: ${title}`);
     } catch (err) {
         console.error("Delete failed:", err);
-        alert("Delete failed.");
+        alert(`Delete failed: ${err.message}`);
     }
 }
+
 
 /* =========================================
    SPECTATE USER TRACKER
@@ -126,10 +169,6 @@ async function deleteTemplate(id, title) {
 function spectate(templateId) {
     console.log("Joining spectate room:", templateId);
     socket.emit("joinSpectate", templateId);
-
-    // Navigate to spectate page (if you have one)
-    const pageButton = document.querySelector('[data-page="spectate"]');
-    if (pageButton) pageButton.click();
 }
 
 window.spectate = spectate;

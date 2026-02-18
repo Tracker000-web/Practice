@@ -1,9 +1,9 @@
 // public/main.js
 
-import { initLayout } from '../src/layout.js';
-import { initSocket } from './socket.js';
-import { loadAdminTemplates } from '../src/admin.js';
-import { loadAnalytics } from '../src/analytics.js';
+import { initLayout } from './layout.js';
+import { initSocket } from '../../src/socket.js';
+import { loadAdminTemplates } from './admin.js';
+import { loadAnalytics } from '../../src/routes/analytics.js';
 import { initUser } from './user.js';
  
 const pageModules = {
