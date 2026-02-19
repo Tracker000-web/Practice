@@ -1,37 +1,34 @@
-// Handles Achievements page
-export function initAchievements(userId) {
-    if (!userId) return;
-    loadAchievements(userId);
-}
+// User achievements module
+import { api } from "../../core/api.js";
 
-/* =========================================
-   LOAD ACHIEVEMENTS
-========================================= */
-async function loadAchievements(userId) {
-    const container = document.getElementById("achievementsContainer");
+export function initAchievements(userId) {
+    const container = document.querySelector("[data-page='achievements']");
     if (!container) return;
 
-    try {
-        const res = await fetch(`/api/user/${userId}/achievements`);
-        if (!res.ok) throw new Error();
+    container.innerHTML = "<p>Loading achievements...</p>";
 
-        const data = await res.json();
-        container.innerHTML = data.length
-            ? data.map(renderAchievement).join("")
-            : "<p>No achievements yet.</p>";
-
-    } catch (err) {
-        console.error("Achievements load error:", err);
-        container.innerHTML = "<p>Error loading achievements.</p>";
-    }
+    loadAchievements(userId, container);
 }
 
-function renderAchievement(a) {
-    return `
-        <div class="achievement-card">
-            <h4>${a.title}</h4>
-            <p>${a.description}</p>
-            <span>${new Date(a.date).toLocaleDateString()}</span>
-        </div>
-    `;
+async function loadAchievements(userId, container) {
+    try {
+        const achievements = await api.get(`/user/${userId}/achievements`);
+        if (!achievements.length) {
+            container.innerHTML = "<p>No achievements yet.</p>";
+            return;
+        }
+
+        container.innerHTML = achievements
+            .map(a => `
+                <div class="achievement">
+                    <strong>${a.title}</strong>
+                    <p>${a.description}</p>
+                    <small>Earned: ${new Date(a.date).toLocaleDateString()}</small>
+                </div>
+            `)
+            .join("");
+    } catch (err) {
+        console.error("Error loading achievements:", err);
+        container.innerHTML = "<p>Error loading achievements.</p>";
+    }
 }

@@ -1,36 +1,34 @@
-// Handles Practice page
-export function initPractice(userId) {
-    if (!userId) return;
-    loadPractice(userId);
-}
+// User practice module
+import { api } from "../../core/api.js";
 
-/* =========================================
-   LOAD PRACTICE ITEMS
-========================================= */
-async function loadPractice(userId) {
-    const container = document.getElementById("practiceContainer");
+export function initPractice(userId) {
+    const container = document.querySelector("[data-page='practice']");
     if (!container) return;
 
-    try {
-        const res = await fetch(`/api/user/${userId}/practice`);
-        if (!res.ok) throw new Error();
+    container.innerHTML = "<p>Loading practice tasks...</p>";
 
-        const items = await res.json();
-        container.innerHTML = items.length
-            ? items.map(renderPracticeItem).join("")
-            : "<p>No practice items available.</p>";
-
-    } catch (err) {
-        console.error("Practice load error:", err);
-        container.innerHTML = "<p>Error loading practice items.</p>";
-    }
+    loadPracticeTasks(userId, container);
 }
 
-function renderPracticeItem(item) {
-    return `
-        <div class="practice-card">
-            <h4>${item.title}</h4>
-            <p>${item.description}</p>
-        </div>
-    `;
+async function loadPracticeTasks(userId, container) {
+    try {
+        const tasks = await api.get(`/user/${userId}/practice`);
+        if (!tasks.length) {
+            container.innerHTML = "<p>No practice tasks assigned.</p>";
+            return;
+        }
+
+        container.innerHTML = tasks
+            .map(t => `
+                <div class="practice-task">
+                    <strong>${t.title}</strong>
+                    <p>${t.description}</p>
+                    <small>Deadline: ${new Date(t.due_date).toLocaleDateString()}</small>
+                </div>
+            `)
+            .join("");
+    } catch (err) {
+        console.error("Error loading practice tasks:", err);
+        container.innerHTML = "<p>Error loading practice tasks.</p>";
+    }
 }

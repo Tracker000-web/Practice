@@ -1,37 +1,39 @@
-// Handles the user History page
+// User tracker history module
+import { api } from "../../core/api.js";
 
 export function initHistory(userId) {
-    if (!userId) return;
-    loadUserHistory(userId);
+    const container = document.getElementById("historyList");
+    if (!container) return;
+
+    container.innerHTML = "Loading history...";
+
+    loadHistory(userId, container);
 }
 
-/* =========================================
-   LOAD USER HISTORY
-========================================= */
-async function loadUserHistory(userId) {
-    const historyList = document.getElementById("historyList");
-    if (!historyList) return;
-
+async function loadHistory(userId, container) {
     try {
-        const res = await fetch(`/api/user/${userId}/history`);
-        if (!res.ok) throw new Error();
+        const history = await api.get(`/user/${userId}/history`);
+        if (!history.length) {
+            container.innerHTML = "<p>No history yet.</p>";
+            return;
+        }
 
-        const history = await res.json();
-        historyList.innerHTML = history.length
-            ? history.map(renderHistoryItem).join("")
-            : "<p>No history yet.</p>";
-
+        container.innerHTML = history
+            .map(h => renderHistoryItem(h))
+            .join("");
     } catch (err) {
-        console.error("History load error:", err);
-        historyList.innerHTML = "<p>Error loading history.</p>";
+        console.error("Error loading history:", err);
+        container.innerHTML = "<p>Error loading history.</p>";
     }
 }
 
-function renderHistoryItem(h) {
+function renderHistoryItem(item) {
     return `
         <div class="history-item">
-            <strong>ID:</strong> ${h.id}
-            <span>${new Date(h.created_at).toLocaleDateString()}</span>
+            <strong>ID:</strong> ${item.id}
+            <span>${new Date(item.created_at).toLocaleString()}</span>
+            <p>Status: ${item.status}</p>
+            <p>Comment: ${item.comment || "-"}</p>
         </div>
     `;
 }

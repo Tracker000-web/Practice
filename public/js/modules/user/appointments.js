@@ -1,37 +1,34 @@
-// Handles Appointments page
-export function initAppointments(userId) {
-    if (!userId) return;
-    loadAppointments(userId);
-}
+// User appointments module
+import { api } from "../../core/api.js";
 
-/* =========================================
-   LOAD APPOINTMENTS
-========================================= */
-async function loadAppointments(userId) {
-    const container = document.getElementById("appointmentsContainer");
+export function initAppointments(userId) {
+    const container = document.querySelector("[data-page='appointments']");
     if (!container) return;
 
-    try {
-        const res = await fetch(`/api/user/${userId}/appointments`);
-        if (!res.ok) throw new Error();
+    container.innerHTML = "<p>Loading appointments...</p>";
 
-        const appointments = await res.json();
-        container.innerHTML = appointments.length
-            ? appointments.map(renderAppointment).join("")
-            : "<p>No upcoming appointments.</p>";
-
-    } catch (err) {
-        console.error("Appointments load error:", err);
-        container.innerHTML = "<p>Error loading appointments.</p>";
-    }
+    loadAppointments(userId, container);
 }
 
-function renderAppointment(a) {
-    return `
-        <div class="appointment-card">
-            <strong>${new Date(a.date).toLocaleDateString()}</strong>
-            <span>${a.time}</span>
-            <p>${a.description}</p>
-        </div>
-    `;
+async function loadAppointments(userId, container) {
+    try {
+        const appointments = await api.get(`/user/${userId}/appointments`);
+        if (!appointments.length) {
+            container.innerHTML = "<p>No appointments scheduled.</p>";
+            return;
+        }
+
+        container.innerHTML = appointments
+            .map(a => `
+                <div class="appointment">
+                    <strong>${a.client_name}</strong> - ${a.phone}
+                    <p>Date: ${new Date(a.date).toLocaleString()}</p>
+                    <p>Status: ${a.status}</p>
+                </div>
+            `)
+            .join("");
+    } catch (err) {
+        console.error("Error loading appointments:", err);
+        container.innerHTML = "<p>Error loading appointments.</p>";
+    }
 }
