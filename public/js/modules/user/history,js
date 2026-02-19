@@ -1,0 +1,37 @@
+// Handles the user History page
+
+export function initHistory(userId) {
+    if (!userId) return;
+    loadUserHistory(userId);
+}
+
+/* =========================================
+   LOAD USER HISTORY
+========================================= */
+async function loadUserHistory(userId) {
+    const historyList = document.getElementById("historyList");
+    if (!historyList) return;
+
+    try {
+        const res = await fetch(`/api/user/${userId}/history`);
+        if (!res.ok) throw new Error();
+
+        const history = await res.json();
+        historyList.innerHTML = history.length
+            ? history.map(renderHistoryItem).join("")
+            : "<p>No history yet.</p>";
+
+    } catch (err) {
+        console.error("History load error:", err);
+        historyList.innerHTML = "<p>Error loading history.</p>";
+    }
+}
+
+function renderHistoryItem(h) {
+    return `
+        <div class="history-item">
+            <strong>ID:</strong> ${h.id}
+            <span>${new Date(h.created_at).toLocaleDateString()}</span>
+        </div>
+    `;
+}

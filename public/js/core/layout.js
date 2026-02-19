@@ -1,5 +1,3 @@
-// public/js/layout.js
-
 export function initLayout() {
     const appLayout = document.querySelector('.app-layout');
     const navButtons = document.querySelectorAll(".nav-btn");

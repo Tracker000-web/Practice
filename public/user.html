@@ -9,7 +9,8 @@
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/trackerpage.css">
 </head>
-<body>
+
+<body data-role="user">
 
 <div class="app-layout" id="appLayout">
 
@@ -40,42 +41,52 @@
   <!-- MAIN CONTENT -->
   <main class="main-content">
   
-    <header>X</header>
+    <header>Welcome, User</header>
 
-    <section class="page" data-page="dashboard">
+    <!-- DASHBOARD -->
+    <section class="page active" data-page="dashboard">
       <h1>Dashboard</h1>
+      <div id="dashboardStats">
+        <!-- Dashboard stats will be injected by JS -->
+      </div>
     </section>
 
-    <!-- TRACKERS SECTION -->
+    <!-- TRACKERS -->
     <section class="page" data-page="trackers">
       <h1>Trackers</h1>
       <div id="trackerList"></div>
       <div id="trackerSheetContainer"></div>
     </section>
 
+    <!-- ACHIEVEMENTS -->
     <section class="page" data-page="achievements">
       <h1>Achievements</h1>
+      <div id="achievementsContainer"></div>
     </section>
 
+    <!-- APPOINTMENTS -->
+    <section class="page" data-page="appointments">
+      <h1>Appointments</h1>
+      <div id="appointmentContainer"></div>
+    </section>
 
-    <!-- HISTORY SECTION -->
+    <!-- HISTORY -->
     <section class="page" data-page="history">
       <h1>History</h1>
       <div id="historyList"></div>
     </section>
 
+    <!-- PRACTICE -->
+    <section class="page" data-page="pratice">
+      <h1>Practice</h1>
+      <div id="practicePage"></div>
+    </section>
+
   </main>
 </div>
 
-<!-- SCRIPT: Only import user.js as module (it imports socket.js internally) -->
-<script type="module">
-  import { initUser } from './js/user.js';
-
-  document.addEventListener('DOMContentLoaded', () => {
-      // Replace "JohnDoe" with dynamic user ID if available
-      initUser("JohnDoe");
-  });
-</script>
+<!-- Load only main.js as module -->
+<script type="module" src="./js/main.js"></script>
 
 </body>
 </html>

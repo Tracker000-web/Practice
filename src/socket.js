@@ -15,14 +15,14 @@ export function initSocket() {
     });
 
     socket.on("trackerSubmitted", id => {
-        import('../public/js/admin.js').then(m => m.refreshLogs());
+        import('../public/js/modules/admin/admin.js').then(m => m.refreshLogs());
     });
 
     // 2. ADD THIS: The listener for the "Push" refresh
     socket.on('refreshManagerCards', () => {
         console.log("New manager card detected! Refreshing list...");
         // Use dynamic import to call loadAdminTrackers from admin.js
-        import('../public/js/admin.js').then(m => {
+        import('../public/js/modules/admin/admin.js').then(m => {
             if (m.loadAdminTrackers) {
                 m.loadAdminTrackers();
             }

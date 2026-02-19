@@ -7,9 +7,8 @@
 
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/trackerpage.css">
-
 </head>
-<body>
+<body data-role="admin">
 
 <div class="app-layout" id="appLayout">
 
@@ -24,7 +23,7 @@
     <button class="nav-btn" data-target="users">Users</button>
     <button class="nav-btn" data-target="trackers">Trackers</button>
     <button class="nav-btn" data-target="logs">Logs</button>
-    <button class="nav-btn" data-target="metrics">Metrics</button>
+    <button class="nav-btn" data-target="metrics">Analytics</button>
     <button class="nav-btn" data-target="appointments">Appointments</button>
 
     <div class="sidebar-footer">
@@ -39,13 +38,18 @@
   <!-- MAIN CONTENT -->
   <main class="main-content">
 
-    <header>X</header>
+    <header id="dashboardHeader">Welcome, Admin</header>
       
-
     <!-- DASHBOARD -->
     <section class="page active" data-page="dashboard">
       <h1>Dashboard</h1>
       <p>Welcome to your dashboard</p>
+      <div class="stats-container">
+        <p>Total Users: <span id="totalUsers">0</span></p>
+        <p>Total Trackers: <span id="totalTrackers">0</span></p>
+        <p>Today's Submissions: <span id="todaySubmissions">0</span></p>
+        <p>Average Bad Lead %: <span id="avgBadLead">0%</span></p>
+      </div>
     </section>
 
     <!-- USERS -->
@@ -115,19 +119,22 @@
 
     </section>
 
-    <!-- Metrics -->
-    <section class="page" data-page="metrics">
-    <h1>Metrics</h1>
+    <!-- ANALYTICS -->
+    <section class="page" data-page="analytics">
+    <h1>Analytics</h1>
     <div class="stats-container">
         <p>Total Submissions: <span id="totalSubmissions">0</span></p>
-        <p>Today's Submissions: <span id="todaySubmissions">0</span></p>
+        <p>Today's Submissions: <span id="todaySubmissionsMetric">0</span></p>
+        <p>Average Bad Lead %: <span id="avgBadLeadMetric">0%</span></p>
     </div>
     </section>
 
   </main>
 </div>
 
-<script type="module" src="js/socket.js"></script>
-<script type="module" src="js/admin.js"></script>
+
+<script type="module" src="./js/admin.js"></script>
+
+
 </body>
 </html>
