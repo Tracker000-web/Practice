@@ -4,6 +4,7 @@ import { initHistory } from "./history.js";
 import { initAchievements } from "./achievements.js";
 import { initAppointments } from "./appointments.js";
 import { initPractice } from "./practice.js";
+import { initMetrics } from "./analytics.js";
 
 /* =========================================
    INIT USER
@@ -23,9 +24,11 @@ export function initUser(userId) {
     initAchievements(userId); // Achievements module
     initAppointments(userId); // Appointments module
     initPractice(userId);     // Practice module
+    initAnalytics(userId);    // Analytics module
 }
 
 /* =========================================
    OPTIONAL: Import layout init if not global
 ========================================= */
-import { initLayout } from "../core/layout.js";
+import { initLayout } from "../core/layout.js";import { initAnalytics } from "../admin/analytics.js";
+

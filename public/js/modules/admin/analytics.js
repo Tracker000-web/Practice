@@ -1,4 +1,4 @@
-export async function initMetrics() {
+export async function initAnalytics() {
     try {
         const totalSubmissions = document.getElementById("totalSubmissions");
         const todaySubmissions = document.getElementById("todaySubmissionsMetric");
