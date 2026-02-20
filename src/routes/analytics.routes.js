@@ -1,44 +1,25 @@
-export async function loadAnalytics() {
-    const container = document.getElementById('analytics-content');
-    if (!container) return;
+const express = require('express');
+const router = express.Router();
+const db = require('../../db');
 
+router.get('/', async (req, res) => {
     try {
-        const res = await fetch('/api/analytics');
-        const data = await res.json();
+        const [totalRes] = await db.query(`SELECT COUNT(*) AS totalSubmissions FROM trackers`);
+        const [todayRes] = await db.query(`SELECT COUNT(*) AS todaySubmissions FROM trackers WHERE DATE(created_at) = CURDATE()`);
+        const [badLeadRes] = await db.query(`
+            SELECT AVG(bad_lead_percent) AS avgBadLead
+            FROM users
+        `);
 
-        container.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>Total Submissions</h4>
-                    <p class="stat-number">${data.totalSubmissions}</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Active Users</h4>
-                    <p class="stat-number">${data.activeUsers}</p>
-                </div>
-            </div>
-
-            <h3>Submissions by Manager</h3>
-            <table class="analytics-table">
-                <thead>
-                    <tr>
-                        <th>Manager Name</th>
-                        <th>Completed Trackers</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${data.breakdown.map(m => `
-                        <tr>
-                            <td>${m.name}</td>
-                            <td>${m.count}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+        res.json({
+            totalSubmissions: totalRes[0].totalSubmissions || 0,
+            todaySubmissions: todayRes[0].todaySubmissions || 0,
+            avgBadLead: Math.round(badLeadRes[0].avgBadLead || 0)
+        });
     } catch (err) {
-        console.error("Failed to load analytics:", err);
+        console.error(err);
+        res.status(500).json({ error: 'Failed to load analytics' });
     }
-}
+});
 
-window.loadAnalytics = loadAnalytics;
+module.exports = router;

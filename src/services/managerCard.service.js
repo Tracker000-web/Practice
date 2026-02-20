@@ -1,6 +1,7 @@
+// src/services/managerCard.service.js
 const db = require('../db');
 
-exports.create = async ({ manager_name, description, template_json }) => {
+async function create({ manager_name, description, template_json }) {
   const [result] = await db.query(
     `INSERT INTO manager_cards (manager_name, description, template_json)
      VALUES (?, ?, ?)`,
@@ -8,24 +9,21 @@ exports.create = async ({ manager_name, description, template_json }) => {
   );
 
   return { success: true, id: result.insertId };
-};
+}
 
-exports.publish = async (id) => {
+async function publish(id) {
+  // Mark as published
   await db.query(
     `UPDATE manager_cards SET status='published' WHERE id=?`,
     [id]
   );
 
+  // Get all users
   const [users] = await db.query(`SELECT id FROM users`);
 
-  const inserts = users.map(u => [
-    u.id,
-    id,
-    true,
-    new Date()
-  ]);
+  if (users.length > 0) {
+    const inserts = users.map(u => [u.id, id, true, new Date()]);
 
-  if (inserts.length > 0) {
     await db.query(
       `INSERT IGNORE INTO user_manager_cards
        (user_id, manager_card_id, is_new, published_at)
@@ -35,9 +33,9 @@ exports.publish = async (id) => {
   }
 
   return { success: true };
-};
+}
 
-exports.remove = async (id) => {
+async function remove(id) {
   await db.query(
     `UPDATE manager_cards SET status='deleted' WHERE id=?`,
     [id]
@@ -49,16 +47,16 @@ exports.remove = async (id) => {
   );
 
   return { success: true };
-};
+}
 
-exports.getAll = async () => {
+async function getAll() {
   const [cards] = await db.query(
     `SELECT * FROM manager_cards WHERE status!='deleted'`
   );
   return cards;
-};
+}
 
-exports.getByUser = async (userId) => {
+async function getByUser(userId) {
   const [cards] = await db.query(`
     SELECT mc.*, umc.is_new
     FROM user_manager_cards umc
@@ -67,4 +65,12 @@ exports.getByUser = async (userId) => {
   `, [userId]);
 
   return cards;
+}
+
+module.exports = {
+  create,
+  publish,
+  remove,
+  getAll,
+  getByUser
 };

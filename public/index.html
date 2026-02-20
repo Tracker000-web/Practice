@@ -64,9 +64,38 @@
 
       <div id="loadingTrackers" style="display:none;">Loading Trackers...</div>
 
+      <!-- BUTTON TO ADD MANAGER CARD -->
       <button id="addBtn" class="secondary-btn" onclick="toggleModal()">+</button>
       <hr>
 
+      <!-- TRACKER TEMPLATE HEADER (TOP FIELDS) -->
+      <div class="sheet-header" style="margin-bottom: 20px;">
+        <h2>Tracker Template</h2>
+
+        <label>Shift:
+          <select id="shiftSelect">
+            <option>Morning</option>
+            <option>Evening</option>
+          </select>
+        </label>
+
+        <label>Date:
+          <input type="date" id="trackerDate">
+        </label>
+
+        <label>Hours:
+          <input type="number" id="trackerHours" step="0.25">
+        </label>
+
+        <label>Additional Appointments:
+          <input type="text" id="additionalAppointments">
+        </label>
+
+        <button id="addRowBtn">+ Add Row</button>
+        <button id="submitAllBtn">Submit Tracker</button>
+      </div>
+
+      <!-- TRACKER ROWS -->
       <div id="trackerList" style="margin-top: 20px;"></div>
 
       <!-- ADD TRACKER MODAL -->
@@ -93,6 +122,7 @@
         </div>
       </div>
     </section>
+
 
     <!-- LOGS -->
     <section class="page" data-page="logs">
@@ -132,7 +162,8 @@
   </main>
 </div>
 
-
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="/js/socket.js"></script>
 <script type="module" src="./js/admin.js"></script>
 
 

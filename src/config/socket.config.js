@@ -1,6 +1,24 @@
+const { Server } = require("socket.io");
+
+let io;
+
 function initSocket(server) {
-    const socketInit = require('../sockets/socket.init');
-    socketInit(server);
+    io = new Server(server);
+
+    io.on("connection", (socket) => {
+        console.log("User connected:", socket.id);
+
+        socket.on("disconnect", () => {
+            console.log("User disconnected:", socket.id);
+        });
+    });
 }
 
-module.exports = { initSocket };
+function getIO() {
+    if (!io) {
+        throw new Error("Socket.io not initialized");
+    }
+    return io;
+}
+
+module.exports = { initSocket, getIO };
