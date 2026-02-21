@@ -30,7 +30,4 @@ export function initUser(userId) {
     initAnalytics(userId);    // Analytics module
 }
 
-/* =========================================
-   OPTIONAL: Import layout init if not global
-========================================= */
 
