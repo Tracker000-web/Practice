@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MY CRM - User Dashboard</title>
+  <title>MY CRM</title>
 
   <!-- CSS -->
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/trackerpage.css">
 </head>
@@ -77,7 +78,7 @@
     </section>
 
     <!-- PRACTICE -->
-    <section class="page" data-page="pratice">
+    <section class="page" data-page="practice">
       <h1>Practice</h1>
       <div id="practicePage"></div>
     </section>
@@ -87,8 +88,8 @@
 
 <!-- Load only main.js as module -->
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/js/socket.js"></script>
-<script type="module" src="./js/main.js"></script>
+<script type="module" src="/js/modules/user/user.js"></script>
+<script type="module" src="/js/main.js"></script>
 
 </body>
 </html>

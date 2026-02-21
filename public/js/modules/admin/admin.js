@@ -5,6 +5,7 @@ import { initLogs } from "./logs.js";
 import { initAnalytics } from "./analytics.js";
 import { initAppointments } from "./appointments.js";
 
+
 export function initAdmin() {
     initDashboard();
     initUsers();

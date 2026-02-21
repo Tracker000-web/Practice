@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/managerCard.controller');
+const db = require('../db');
 
 router.get('/', controller.getAllManagerCards);
 router.post('/', controller.createManagerCard);
