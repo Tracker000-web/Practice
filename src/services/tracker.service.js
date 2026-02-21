@@ -7,6 +7,16 @@ const db = require("../database/db");
  * @param {number} templateId
  * @param {Array} rows
  */
+
+// Fetch assigned tracker templates for a user
+exports.getUserTemplates = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT * FROM manager_card_templates WHERE user_id = ?",
+    [userId]
+  );
+  return rows;
+};
+
 exports.submitTrackerRows = async (userId, templateId, rows) => {
     if (!rows || rows.length === 0) return;
 
@@ -45,4 +55,13 @@ exports.submitTrackerRows = async (userId, templateId, rows) => {
     );
 
     return { success: true, trackerId };
+};
+
+// Fetch tracker history for a user
+exports.getUserHistory = async (userId) => {
+  const [rows] = await db.query(
+    "SELECT * FROM user_trackers WHERE user_id = ? ORDER BY created_at DESC",
+    [userId]
+  );
+  return rows;
 };
