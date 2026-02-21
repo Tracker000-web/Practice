@@ -1,49 +1,48 @@
-exports.createTracker = async (templateData, rowDataArray) => {
-  const { user_id, manager_card_id, shift, date, hours, additional_appointment } = templateData;
+// src/services/tracker.service.js
+const db = require("../database/db");
 
-  // First, create tracker header
-  const [trackerResult] = await db.query(
-    `INSERT INTO trackers
-     (user_id, manager_card_id, shift, date, hours, additional_appointment)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      user_id,
-      manager_card_id || null,
-      shift || null,
-      date || null,
-      hours || 0,
-      JSON.stringify(additional_appointment || [])
-    ]
-  );
+/**
+ * Save tracker rows for a user's submission
+ * @param {number} userId
+ * @param {number} templateId
+ * @param {Array} rows
+ */
+exports.submitTrackerRows = async (userId, templateId, rows) => {
+    if (!rows || rows.length === 0) return;
 
-  const trackerId = trackerResult.insertId;
+    // 1️⃣ Create tracker header for this submission
+    const [trackerResult] = await db.query(
+        `INSERT INTO trackers (user_id, manager_card_id, date, shift, hours)
+         VALUES (?, ?, CURDATE(), NULL, 0)`,
+        [userId, templateId]
+    );
 
-  // Then, insert rows for this tracker
-  if (rowDataArray && rowDataArray.length > 0) {
-    const inserts = rowDataArray.map(row => [
-      trackerId,
-      row.phone_number || null,
-      row.no_answer || 0,
-      row.voicemail || 0,
-      row.not_in_service || 0,
-      row.left_message || 0,
-      row.call_backs || 0,
-      row.appointments || 0,
-      row.preset_appointments || 0,
-      row.confirmed_presets || 0,
-      row.state || null,
-      row.status || null,
-      row.comment || null
+    const trackerId = trackerResult.insertId;
+
+    // 2️⃣ Insert tracker rows
+    const inserts = rows.map(row => [
+        trackerId,
+        row.phone_number || null,
+        row.no_answer || 0,
+        row.voicemail || 0,
+        row.not_in_service || 0,
+        row.left_message || 0,
+        row.call_backs || 0,
+        row.appointments || 0,
+        row.preset_appointments || 0,
+        row.confirmed_presets || 0,
+        row.state || null,
+        row.status || null,
+        row.comment || null
     ]);
 
     await db.query(
-      `INSERT INTO tracker_rows
-       (tracker_id, phone_number, no_answer, voicemail, not_in_service, left_message,
-        call_backs, appointments, preset_appointments, confirmed_presets, state, status, comment)
-       VALUES ?`,
-      [inserts]
+        `INSERT INTO tracker_rows
+         (tracker_id, phone_number, no_answer, voicemail, not_in_service, left_message,
+          call_backs, appointments, preset_appointments, confirmed_presets, state, status, comment)
+         VALUES ?`,
+        [inserts]
     );
-  }
 
-  return { success: true, trackerId };
+    return { success: true, trackerId };
 };

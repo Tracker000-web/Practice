@@ -1,3 +1,4 @@
+//server.js
 const path = require('path');
 const express = require('express'); // Make sure express is required
 const { createServer } = require('./config/app.config');

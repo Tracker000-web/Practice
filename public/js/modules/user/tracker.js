@@ -1,5 +1,8 @@
+// js/modules/user/tracker.js
 
-
+/* ===================================================
+   STATE
+=================================================== */
 export const state = {
     currentUser: null,
     activeTemplates: [],
@@ -7,20 +10,26 @@ export const state = {
     isSubmitted: true
 };
 
-/* =========================================
+let socket = null;
+let currentManagercardId = null;
+
+/* ===================================================
    INIT TRACKERS MODULE
-========================================= */
+=================================================== */
 export function initTrackers(userId) {
     state.currentUser = userId;
+
+    socket = io(); // Initialize socket
 
     loadUserTemplates();
     loadUserHistory();
     registerSocketListeners();
+    registerCompanionSockets();
 }
 
-/* =========================================
-   SOCKET LISTENERS
-========================================= */
+/* ===================================================
+   SOCKET LISTENERS (submission & admin updates)
+=================================================== */
 function registerSocketListeners() {
     socket.emit("joinUserRoom", state.currentUser);
 
@@ -52,9 +61,32 @@ function registerSocketListeners() {
     });
 }
 
-/* =========================================
+/* ===================================================
+   COMPANION / DIALER SOCKETS
+=================================================== */
+function registerCompanionSockets() {
+    socket.on("dialers-update", (dialers) => {
+        if (!currentManagercardId) return;
+
+        const companions = dialers
+            .filter(u => u.userId !== state.currentUser)
+            .map(u => u.name);
+
+        const el = document.getElementById("dialersList");
+        if (el) el.innerText = companions.length ? companions.join(", ") : "You're alone";
+    });
+
+    window.addEventListener("beforeunload", () => {
+        if (!state.isSubmitted) {
+            alert("Tracker not submitted!");
+        }
+        if (currentManagercardId) socket.emit("leave-managercard");
+    });
+}
+
+/* ===================================================
    LOAD TEMPLATES
-========================================= */
+=================================================== */
 async function loadUserTemplates() {
     const container = document.getElementById("trackerList");
     if (!container) return;
@@ -82,9 +114,9 @@ async function loadUserTemplates() {
     }
 }
 
-/* =========================================
+/* ===================================================
    RENDER MANAGER CARD
-========================================= */
+=================================================== */
 function renderManagerCard(template) {
     const container = document.getElementById("trackerList");
     if (document.querySelector(`.manager-card[data-id="${template.id}"]`)) return;
@@ -104,7 +136,7 @@ function renderManagerCard(template) {
 }
 
 /* =========================================
-   OPEN SPREADSHEET
+   OPEN SPREADSHEET (with companion view)
 ========================================= */
 function openSpreadsheet(template) {
     if (!template) return;
@@ -115,7 +147,8 @@ function openSpreadsheet(template) {
     const container = document.getElementById("trackerSheetContainer");
     container.innerHTML = `
         <div class="sheet-header">
-            <h2>${template.title}</h2>
+            <h2>${template.title} ${template.status === "New" ? '' : ''}</h2>
+            <div id="companionList" class="companion-list">Companions: None</div>
             ${template.status === "New" ? '<button id="addRowBtn">+ Add New Tracker</button>' : ''}
             <button id="submitAllBtn">Submit All</button>
         </div>
@@ -127,16 +160,53 @@ function openSpreadsheet(template) {
         </table>
     `;
 
+    // Remove "New" tag after opening
     if (template.status === "New") {
-        document.getElementById("addRowBtn").addEventListener("click", () => addTrackerRow(template));
+        template.status = "Opened"; // Update state so tag disappears
+        const card = document.querySelector(`.manager-card[data-id="${template.id}"]`);
+        if (card) card.classList.remove("new"); // Optional: remove CSS class
+    }
+
+    if (template.status === "Opened" || template.status === "New") {
+        document.getElementById("addRowBtn")?.addEventListener("click", () => addTrackerRow(template));
     }
 
     document.getElementById("submitAllBtn").addEventListener("click", () => submitAllTrackers(template));
+
+    // Join socket room for companion view
+    socket.emit("join-managercard", {
+        workspaceId: template.workspaceId,
+        managercardId: template.id,
+        user: { id: state.currentUser, name: state.currentUserName }
+    });
+
+    // Listen for dialer updates
+    socket.on("dialers-update", (dialers) => {
+        const companionDiv = document.getElementById("companionList");
+        if (!companionDiv) return;
+
+        const otherDialers = dialers
+            .filter(u => u.userId !== state.currentUser)
+            .map(u => u.name);
+
+        companionDiv.textContent = otherDialers.length
+            ? `Companions: ${otherDialers.join(", ")}`
+            : "Companions: None";
+    });
 }
 
 /* =========================================
-   ADD TRACKER ROW
+   CLOSE SPREADSHEET / CLEANUP
 ========================================= */
+function closeSpreadsheet(template) {
+    // Leave the companion room when closing
+    socket.emit("leave-managercard");
+    document.getElementById("trackerSheetContainer").innerHTML = "";
+}
+
+/* ===================================================
+   ADD TRACKER ROW
+=================================================== */
 function addTrackerRow(template) {
     const tbody = document.querySelector("#trackerTable tbody");
     if (!tbody || !template) return;
@@ -166,9 +236,9 @@ function addTrackerRow(template) {
     tbody.appendChild(row);
 }
 
-/* =========================================
+/* ===================================================
    SUBMIT ALL TRACKERS
-========================================= */
+=================================================== */
 async function submitAllTrackers(template) {
     if (!state.trackerRows.length) return alert("Add at least one tracker row.");
 
@@ -200,9 +270,9 @@ async function submitAllTrackers(template) {
     }
 }
 
-/* =========================================
+/* ===================================================
    LOAD USER HISTORY
-========================================= */
+=================================================== */
 async function loadUserHistory() {
     const historyList = document.getElementById("historyList");
     if (!historyList) return;
@@ -230,13 +300,3 @@ function renderHistoryItem(h) {
         </div>
     `;
 }
-
-/* =========================================
-   UNSUBMITTED GUARD
-========================================= */
-window.addEventListener("beforeunload", e => {
-    if (!state.isSubmitted) {
-        e.preventDefault();
-        e.returnValue = "Tracker not submitted!";
-    }
-});

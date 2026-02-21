@@ -1,5 +1,5 @@
 // Entry module for User dashboard
-import { initLayout } from '../core/layout.js';
+import { initLayout } from "../../core/layout.js";
 import { initTrackers } from "./tracker.js";
 import { initHistory } from "./history.js";
 import { initAchievements } from "./achievements.js";

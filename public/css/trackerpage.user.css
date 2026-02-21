@@ -1,0 +1,61 @@
+/* User tracker cards */
+.manager-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  position: relative;
+  border-radius: 6px;
+  background: #fff;
+  margin-bottom: 10px;
+}
+
+/* New tag badge */
+.manager-card.new::after {
+  content: "New";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Tracker row items */
+.tracker-item {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Buttons */
+.delete-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  margin-left: 5px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #cc0000 !important;
+}
+
+/* Companion list */
+.companion-list {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px;
+}

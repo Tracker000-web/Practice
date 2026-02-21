@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/tracker.controller');
-const db = require('../db');
+const auth = require('../middleware/auth');
 
 router.post('/', controller.createTracker);
 router.post('/:id/submit', controller.submitTracker);
